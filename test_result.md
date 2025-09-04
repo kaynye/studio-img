@@ -120,6 +120,54 @@ frontend:
         agent: "testing"
         comment: "✅ PASSED - Page loads correctly with 'ImageCraft Pro' title, drag & drop zone visible, orange/amber design elements found (6 elements), 'Choisir une image' button present. Interface is clean and professional."
 
+  - task: "Nouveaux presets étendus"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImageEditor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - All 6 new extended presets found and visible: 'Favicon Multi-tailles', 'Facebook Cover', 'Instagram Post', 'Twitter Header', 'Thumbnail Web', 'Banner Web'. Presets display correct dimension badges and descriptions."
+
+  - task: "Formats corrigés (ICO et JPEG)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImageEditor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - ICO format present in format list and selectable. JPEG format available with correct 'jpeg' extension (not 'jpg'). All 5 formats working: PNG, PNG Transparent, JPEG, WebP, ICO."
+
+  - task: "Interface des presets améliorée"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImageEditor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Preset interface elements working correctly: 8 dimension badges found, preset descriptions visible, 6 preset cards with hover animations. Visual design and interactions working as expected."
+
+  - task: "Fonctionnalité preset dimensions"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/ImageEditor.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE - Preset dimension functionality not working. When clicking presets like 'Instagram Post' (should set 1080x1080) or 'Facebook Cover' (should set 820x312), dimensions remain at 1x1 instead of updating. Presets are clickable but not applying intended dimensions. handlePresetSize function may not be updating customSize state correctly."
+
   - task: "Upload de fichier"
     implemented: true
     working: true
