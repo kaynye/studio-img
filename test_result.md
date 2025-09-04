@@ -158,7 +158,7 @@ frontend:
 
   - task: "Fonctionnalité preset dimensions"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/ImageEditor.jsx"
     stuck_count: 2
     priority: "high"
@@ -170,6 +170,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL ISSUE CONFIRMED - Comprehensive testing reveals major preset dimension bug. Only Instagram Post works correctly (1080×1080). All other presets fail: Facebook Cover gets 820×820 instead of 820×312, Twitter Header gets 1500×1500 instead of 1500×500, Thumbnail Web gets 300×300 instead of 300×200, Banner Web gets 1200×1200 instead of 1200×400. The issue is that all presets are setting height to match width (square dimensions) instead of using correct aspect ratios. Toast notifications work correctly showing intended dimensions but actual field values are wrong."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED - COMPREHENSIVE FINAL VALIDATION COMPLETED! All 6 presets now work perfectly: Facebook Cover (820×312) ✅, Instagram Post (1080×1080) ✅, Twitter Header (1500×500) ✅, Thumbnail Web (300×200) ✅, Banner Web (1200×400) ✅, Favicon Multi-tailles (16×16, 32×32, 48×48) ✅. Preset dimension bug has been completely resolved. All presets correctly apply their intended dimensions to the Taille tab fields."
 
   - task: "Upload de fichier"
     implemented: true
