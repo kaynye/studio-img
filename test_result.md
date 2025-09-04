@@ -160,13 +160,16 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/src/components/ImageEditor.jsx"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL ISSUE - Preset dimension functionality not working. When clicking presets like 'Instagram Post' (should set 1080x1080) or 'Facebook Cover' (should set 820x312), dimensions remain at 1x1 instead of updating. Presets are clickable but not applying intended dimensions. handlePresetSize function may not be updating customSize state correctly."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE CONFIRMED - Comprehensive testing reveals major preset dimension bug. Only Instagram Post works correctly (1080×1080). All other presets fail: Facebook Cover gets 820×820 instead of 820×312, Twitter Header gets 1500×1500 instead of 1500×500, Thumbnail Web gets 300×300 instead of 300×200, Banner Web gets 1200×1200 instead of 1200×400. The issue is that all presets are setting height to match width (square dimensions) instead of using correct aspect ratios. Toast notifications work correctly showing intended dimensions but actual field values are wrong."
 
   - task: "Upload de fichier"
     implemented: true
