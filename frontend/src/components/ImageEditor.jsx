@@ -40,14 +40,48 @@ const ImageEditor = () => {
   const formats = [
     { id: 'png', name: 'PNG', description: 'Qualité parfaite avec transparence', extension: 'png' },
     { id: 'png-transparent', name: 'PNG Transparent', description: 'Fond transparent automatique', extension: 'png' },
-    { id: 'jpeg', name: 'JPEG', description: 'Compression optimisée', extension: 'jpg' },
+    { id: 'jpeg', name: 'JPEG', description: 'Compression optimisée', extension: 'jpeg' },
     { id: 'webp', name: 'WebP', description: 'Format web moderne', extension: 'webp' },
+    { id: 'ico', name: 'ICO', description: 'Icône Windows/Web', extension: 'ico' },
   ];
 
   const presetSizes = [
-    { id: 'favicon', name: 'Favicon', sizes: [{ w: 16, h: 16 }, { w: 32, h: 32 }, { w: 48, h: 48 }] },
-    { id: 'social', name: 'Réseaux sociaux', sizes: [{ w: 1200, h: 630 }, { w: 1080, h: 1080 }] },
-    { id: 'web', name: 'Web', sizes: [{ w: 320, h: 240 }, { w: 768, h: 576 }, { w: 1200, h: 900 }] },
+    { 
+      id: 'favicon', 
+      name: 'Favicon Multi-tailles', 
+      description: 'Génère automatiquement toutes les tailles',
+      action: 'multi-download'
+    },
+    { 
+      id: 'social-facebook', 
+      name: 'Facebook Cover', 
+      sizes: [{ w: 820, h: 312 }],
+      action: 'resize'
+    },
+    { 
+      id: 'social-instagram', 
+      name: 'Instagram Post', 
+      sizes: [{ w: 1080, h: 1080 }],
+      action: 'resize'
+    },
+    { 
+      id: 'social-twitter', 
+      name: 'Twitter Header', 
+      sizes: [{ w: 1500, h: 500 }],
+      action: 'resize'
+    },
+    { 
+      id: 'web-thumbnail', 
+      name: 'Thumbnail Web', 
+      sizes: [{ w: 300, h: 200 }],
+      action: 'resize'
+    },
+    { 
+      id: 'web-banner', 
+      name: 'Banner Web', 
+      sizes: [{ w: 1200, h: 400 }],
+      action: 'resize'
+    },
   ];
 
   const filterDefinitions = [
