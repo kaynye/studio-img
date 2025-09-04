@@ -211,3 +211,5 @@ agent_communication:
     message: "Starting comprehensive testing of ImageCraft Pro application. Will test all major functionality including UI, file upload, filters, processing, and download features."
   - agent: "testing"
     message: "TESTING COMPLETED SUCCESSFULLY ✅ All major functionality working correctly. ImageCraft Pro is a fully functional image editor with professional UI, real-time filters, multiple format support, preset functionality, and responsive design. Only minor issues: progress bar not visually detected during processing and toast notifications not visually confirmed, but core functionality works perfectly. Application ready for production use."
+  - agent: "testing"
+    message: "SPECIFIC IMPROVEMENTS TESTING COMPLETED ✅ Tested new extended presets, ICO format, JPEG extension, and preset interface. Found 1 CRITICAL issue: preset dimension functionality not working correctly. All presets visible but not applying intended dimensions."
