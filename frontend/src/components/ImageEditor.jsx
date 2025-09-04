@@ -642,17 +642,35 @@ const ImageEditor = () => {
                         {presetSizes.map((preset) => (
                           <Card 
                             key={preset.id} 
-                            className="p-3 cursor-pointer hover:bg-orange-25 transition-colors border-orange-200"
+                            className="p-3 cursor-pointer hover:bg-orange-25 transition-all duration-300 border-orange-200 hover:border-orange-300 hover:shadow-md"
                             onClick={() => handlePresetSize(preset)}
                           >
                             <div className="font-medium text-slate-700 mb-1">{preset.name}</div>
-                            <div className="flex flex-wrap gap-1">
-                              {preset.sizes.map((size, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs bg-orange-100 text-orange-700">
-                                  {size.w}×{size.h}
+                            {preset.description && (
+                              <div className="text-xs text-slate-500 mb-2">{preset.description}</div>
+                            )}
+                            {preset.sizes && (
+                              <div className="flex flex-wrap gap-1">
+                                {preset.sizes.map((size, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                                    {size.w}×{size.h}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            {preset.action === 'multi-download' && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                  16×16
                                 </Badge>
-                              ))}
-                            </div>
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                  32×32
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                  48×48
+                                </Badge>
+                              </div>
+                            )}
                           </Card>
                         ))}
                       </div>
