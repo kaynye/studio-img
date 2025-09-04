@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Upload, Download, RotateCcw, Crop, Palette, Settings, Zap, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Upload, Download, RotateCcw, Crop, Palette, Settings, Zap, Image as ImageIcon, Scissors, RotateCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
@@ -7,19 +7,74 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { useToast } from '../hooks/use-toast';
-import { mockFilters, mockFormats, mockPresets, mockProcessImage } from '../mock';
+import { ImageProcessor } from '../services/ImageProcessor';
 
 const ImageEditor = () => {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [filters, setFilters] = useState({});
+  const [originalPreview, setOriginalPreview] = useState(null);
+  const [processedPreview, setProcessedPreview] = useState(null);
+  const [filters, setFilters] = useState({
+    brightness: 0,
+    contrast: 0,
+    saturation: 0,
+    blur: 0,
+    sharpen: 0,
+    gamma: 1
+  });
   const [selectedFormat, setSelectedFormat] = useState('png');
   const [processing, setProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [imageMetadata, setImageMetadata] = useState(null);
+  const [customSize, setCustomSize] = useState({ width: '', height: '' });
+  const [quality, setQuality] = useState(90);
+  const [cropMode, setCropMode] = useState(false);
+  
   const fileInputRef = useRef(null);
+  const imageProcessor = useRef(new ImageProcessor());
   const { toast } = useToast();
+
+  const formats = [
+    { id: 'png', name: 'PNG', description: 'Qualité parfaite avec transparence', extension: 'png' },
+    { id: 'png-transparent', name: 'PNG Transparent', description: 'Fond transparent automatique', extension: 'png' },
+    { id: 'jpeg', name: 'JPEG', description: 'Compression optimisée', extension: 'jpg' },
+    { id: 'webp', name: 'WebP', description: 'Format web moderne', extension: 'webp' },
+  ];
+
+  const presetSizes = [
+    { id: 'favicon', name: 'Favicon', sizes: [{ w: 16, h: 16 }, { w: 32, h: 32 }, { w: 48, h: 48 }] },
+    { id: 'social', name: 'Réseaux sociaux', sizes: [{ w: 1200, h: 630 }, { w: 1080, h: 1080 }] },
+    { id: 'web', name: 'Web', sizes: [{ w: 320, h: 240 }, { w: 768, h: 576 }, { w: 1200, h: 900 }] },
+  ];
+
+  const filterDefinitions = [
+    { id: 'brightness', name: 'Luminosité', min: -100, max: 100, default: 0, unit: '' },
+    { id: 'contrast', name: 'Contraste', min: -100, max: 100, default: 0, unit: '' },
+    { id: 'saturation', name: 'Saturation', min: -100, max: 100, default: 0, unit: '' },
+    { id: 'blur', name: 'Flou', min: 0, max: 10, default: 0, unit: 'px' },
+    { id: 'gamma', name: 'Gamma', min: 0.1, max: 3, default: 1, step: 0.1, unit: '' },
+  ];
+
+  // Appliquer les filtres en temps réel
+  useEffect(() => {
+    if (selectedFile && originalPreview) {
+      applyFiltersRealTime();
+    }
+  }, [filters, selectedFile, originalPreview]);
+
+  const applyFiltersRealTime = async () => {
+    if (!selectedFile) return;
+    
+    try {
+      const processedDataUrl = await imageProcessor.current.applyFilters(selectedFile, filters);
+      setProcessedPreview(processedDataUrl);
+    } catch (error) {
+      console.error('Erreur lors de l\'application des filtres:', error);
+    }
+  };
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -49,17 +104,35 @@ const ImageEditor = () => {
     setIsDragging(false);
   }, []);
 
-  const handleFileSelect = (file) => {
+  const handleFileSelect = async (file) => {
     setSelectedFile(file);
+    
+    // Créer le preview original
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target.result);
+    reader.onload = (e) => {
+      setOriginalPreview(e.target.result);
+      setProcessedPreview(e.target.result);
+    };
     reader.readAsDataURL(file);
     
+    // Obtenir les métadonnées
+    try {
+      const metadata = await imageProcessor.current.getImageMetadata(file);
+      setImageMetadata(metadata);
+      setCustomSize({ width: metadata.width.toString(), height: metadata.height.toString() });
+    } catch (error) {
+      console.error('Erreur lors de la lecture des métadonnées:', error);
+    }
+
     // Reset filters
-    setFilters(mockFilters.reduce((acc, filter) => ({
-      ...acc,
-      [filter.id]: filter.default
-    }), {}));
+    setFilters({
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      blur: 0,
+      sharpen: 0,
+      gamma: 1
+    });
   };
 
   const handleFilterChange = (filterId, value) => {
@@ -72,32 +145,60 @@ const ImageEditor = () => {
     setProcessing(true);
     setProcessingProgress(0);
     
-    // Simulate processing progress
-    const interval = setInterval(() => {
-      setProcessingProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 200);
-
     try {
-      const result = await mockProcessImage(selectedFile, {
-        filters,
-        format: selectedFormat,
-      });
+      // Simuler une progression pour l'expérience utilisateur
+      const progressInterval = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 15;
+        });
+      }, 200);
+
+      let processedDataUrl;
       
+      // Si une taille personnalisée est définie
+      if (customSize.width && customSize.height) {
+        const resizedUrl = await imageProcessor.current.resizeImage(
+          selectedFile, 
+          parseInt(customSize.width), 
+          parseInt(customSize.height), 
+          false
+        );
+        
+        // Créer un blob temporaire pour appliquer les filtres
+        const response = await fetch(resizedUrl);
+        const blob = await response.blob();
+        const resizedFile = new File([blob], selectedFile.name, { type: selectedFile.type });
+        
+        processedDataUrl = await imageProcessor.current.applyAdvancedFilters(resizedFile, filters);
+      } else {
+        processedDataUrl = await imageProcessor.current.applyAdvancedFilters(selectedFile, filters);
+      }
+      
+      // Convertir au format demandé
+      const response = await fetch(processedDataUrl);
+      const blob = await response.blob();
+      const tempFile = new File([blob], selectedFile.name, { type: selectedFile.type });
+      
+      const finalDataUrl = await imageProcessor.current.convertToFormat(
+        tempFile, 
+        selectedFormat, 
+        quality / 100
+      );
+      
+      setProcessedPreview(finalDataUrl);
       setProcessingProgress(100);
       
-      if (result.success) {
-        toast({
-          title: "Image traitée avec succès!",
-          description: `Format: ${result.metadata.format.toUpperCase()}, Taille: ${Math.round(result.metadata.newSize / 1024)}KB`,
-        });
-      }
+      toast({
+        title: "Image traitée avec succès!",
+        description: `Format: ${selectedFormat.toUpperCase()}, Qualité: ${quality}%`,
+      });
+      
     } catch (error) {
+      console.error('Erreur lors du traitement:', error);
       toast({
         title: "Erreur de traitement",
         description: "Une erreur s'est produite lors du traitement de l'image.",
@@ -109,6 +210,66 @@ const ImageEditor = () => {
     }
   };
 
+  const handleDownload = () => {
+    if (!processedPreview || !selectedFile) return;
+    
+    const format = formats.find(f => f.id === selectedFormat);
+    const filename = selectedFile.name.replace(/\.[^/.]+$/, '');
+    
+    imageProcessor.current.downloadImage(
+      processedPreview, 
+      filename, 
+      format?.extension || 'png'
+    );
+    
+    toast({
+      title: "Téléchargement démarré",
+      description: `${filename}.${format?.extension || 'png'}`,
+    });
+  };
+
+  const handlePresetSize = async (preset) => {
+    if (!selectedFile) return;
+    
+    // Pour les favicons, générer toutes les tailles
+    if (preset.id === 'favicon') {
+      try {
+        const favicons = await imageProcessor.current.generateFavicons(selectedFile);
+        
+        // Télécharger toutes les tailles
+        Object.entries(favicons).forEach(([size, dataUrl]) => {
+          imageProcessor.current.downloadImage(dataUrl, `favicon-${size}`, 'png');
+        });
+        
+        toast({
+          title: "Favicons générés!",
+          description: "Toutes les tailles ont été téléchargées.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de générer les favicons.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Pour les autres presets, utiliser la première taille
+      const firstSize = preset.sizes[0];
+      setCustomSize({ width: firstSize.w.toString(), height: firstSize.h.toString() });
+    }
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      blur: 0,
+      sharpen: 0,
+      gamma: 1
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-50">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -117,13 +278,14 @@ const ImageEditor = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-2">
             ImageCraft Pro
           </h1>
-          <p className="text-slate-600 text-lg">Retouche d'image professionnelle avec conversion de formats</p>
+          <p className="text-slate-600 text-lg">Retouche d'image professionnelle - Traitement local instantané</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Upload Area */}
-          <div className="lg:col-span-2">
-            <Card className="h-full border-2 border-orange-200 shadow-lg">
+          {/* Zone de travail */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Upload Area */}
+            <Card className="border-2 border-orange-200 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-slate-700">
                   <ImageIcon className="w-5 h-5" />
@@ -142,16 +304,16 @@ const ImageEditor = () => {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                   >
-                    <Upload className="w-16 h-16 mx-auto mb-4 text-orange-400" />
+                    <Upload className="w-16 h-16 mx-auto mb-4 text-orange-400 upload-icon" />
                     <h3 className="text-xl font-semibold text-slate-700 mb-2">
                       Glissez votre image ici
                     </h3>
                     <p className="text-slate-500 mb-4">
-                      Ou cliquez pour sélectionner un fichier
+                      Ou cliquez pour sélectionner un fichier • Traitement 100% local
                     </p>
                     <Button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                      className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all duration-300"
                     >
                       Choisir une image
                     </Button>
@@ -165,21 +327,31 @@ const ImageEditor = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Preview */}
-                    <div className="relative rounded-lg overflow-hidden bg-slate-100 border-2 border-orange-200">
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="w-full h-96 object-contain"
-                        style={{
-                          filter: `
-                            brightness(${100 + (filters.brightness || 0)}%)
-                            contrast(${100 + (filters.contrast || 0)}%)
-                            saturate(${100 + (filters.saturation || 0)}%)
-                            blur(${filters.blur || 0}px)
-                          `
-                        }}
-                      />
+                    {/* Comparaison avant/après */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Image originale */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-600">Original</Label>
+                        <div className="relative rounded-lg overflow-hidden bg-slate-100 border-2 border-slate-200">
+                          <img
+                            src={originalPreview}
+                            alt="Original"
+                            className="w-full h-64 object-contain"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Image traitée */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-600">Aperçu traité</Label>
+                        <div className="relative rounded-lg overflow-hidden bg-slate-100 border-2 border-orange-200">
+                          <img
+                            src={processedPreview}
+                            alt="Traité"
+                            className="w-full h-64 object-contain"
+                          />
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Processing Progress */}
@@ -198,25 +370,39 @@ const ImageEditor = () => {
                       <Button 
                         onClick={handleProcess}
                         disabled={processing}
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 transition-all duration-300"
                       >
                         <Zap className="w-4 h-4 mr-2" />
                         {processing ? 'Traitement...' : 'Traiter l\'image'}
                       </Button>
-                      <Button variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50">
+                      <Button 
+                        onClick={handleDownload}
+                        variant="outline" 
+                        className="border-orange-300 text-orange-600 hover:bg-orange-50 transition-all duration-300"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Télécharger
                       </Button>
                       <Button 
                         variant="outline" 
-                        onClick={() => {
-                          setSelectedFile(null);
-                          setPreview(null);
-                          setFilters({});
-                        }}
-                        className="border-slate-300 text-slate-600 hover:bg-slate-50"
+                        onClick={resetFilters}
+                        className="border-amber-300 text-amber-600 hover:bg-amber-50 transition-all duration-300"
                       >
                         <RotateCcw className="w-4 h-4 mr-2" />
+                        Reset filtres
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setSelectedFile(null);
+                          setOriginalPreview(null);
+                          setProcessedPreview(null);
+                          setImageMetadata(null);
+                          resetFilters();
+                        }}
+                        className="border-slate-300 text-slate-600 hover:bg-slate-50 transition-all duration-300"
+                      >
+                        <RotateCw className="w-4 h-4 mr-2" />
                         Nouvelle image
                       </Button>
                     </div>
@@ -226,7 +412,7 @@ const ImageEditor = () => {
             </Card>
           </div>
 
-          {/* Controls Panel */}
+          {/* Panneau de contrôles */}
           <div className="space-y-6">
             {selectedFile && (
               <Card className="border-2 border-amber-200 shadow-lg">
@@ -238,67 +424,120 @@ const ImageEditor = () => {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="filters" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="filters">Filtres</TabsTrigger>
+                      <TabsTrigger value="resize">Taille</TabsTrigger>
                       <TabsTrigger value="format">Format</TabsTrigger>
                       <TabsTrigger value="presets">Presets</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="filters" className="space-y-4 mt-4">
-                      {mockFilters.map((filter) => (
+                      {filterDefinitions.map((filter) => (
                         <div key={filter.id} className="space-y-2">
                           <div className="flex justify-between items-center">
                             <label className="text-sm font-medium text-slate-700">
                               {filter.name}
                             </label>
-                            <span className="text-xs text-slate-500">
-                              {filters[filter.id] || filter.default}
-                            </span>
+                            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                              {filters[filter.id]}{filter.unit}
+                            </Badge>
                           </div>
                           <Slider
-                            value={[filters[filter.id] || filter.default]}
+                            value={[filters[filter.id]]}
                             onValueChange={(value) => handleFilterChange(filter.id, value)}
                             min={filter.min}
                             max={filter.max}
-                            step={filter.id === 'gamma' ? 0.1 : 1}
+                            step={filter.step || 1}
                             className="w-full"
                           />
                         </div>
                       ))}
                     </TabsContent>
                     
+                    <TabsContent value="resize" className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-slate-600">Largeur</Label>
+                          <Input
+                            type="number"
+                            value={customSize.width}
+                            onChange={(e) => setCustomSize(prev => ({ ...prev, width: e.target.value }))}
+                            placeholder="px"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-slate-600">Hauteur</Label>
+                          <Input
+                            type="number"
+                            value={customSize.height}
+                            onChange={(e) => setCustomSize(prev => ({ ...prev, height: e.target.value }))}
+                            placeholder="px"
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
                     <TabsContent value="format" className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">
-                          Format de sortie
-                        </label>
-                        <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {mockFormats.map((format) => (
-                              <SelectItem key={format.id} value={format.id}>
-                                <div>
-                                  <div className="font-medium">{format.name}</div>
-                                  <div className="text-xs text-slate-500">{format.description}</div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                            Format de sortie
+                          </Label>
+                          <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {formats.map((format) => (
+                                <SelectItem key={format.id} value={format.id}>
+                                  <div>
+                                    <div className="font-medium">{format.name}</div>
+                                    <div className="text-xs text-slate-500">{format.description}</div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {(selectedFormat === 'jpeg' || selectedFormat === 'webp') && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <Label className="text-sm font-medium text-slate-700">
+                                Qualité
+                              </Label>
+                              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
+                                {quality}%
+                              </Badge>
+                            </div>
+                            <Slider
+                              value={[quality]}
+                              onValueChange={(value) => setQuality(value[0])}
+                              min={10}
+                              max={100}
+                              step={5}
+                              className="w-full"
+                            />
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
                     
                     <TabsContent value="presets" className="space-y-4 mt-4">
                       <div className="space-y-3">
-                        {mockPresets.map((preset) => (
-                          <Card key={preset.id} className="p-3 cursor-pointer hover:bg-orange-25 transition-colors border-orange-200">
+                        {presetSizes.map((preset) => (
+                          <Card 
+                            key={preset.id} 
+                            className="p-3 cursor-pointer hover:bg-orange-25 transition-colors border-orange-200"
+                            onClick={() => handlePresetSize(preset)}
+                          >
                             <div className="font-medium text-slate-700 mb-1">{preset.name}</div>
                             <div className="flex flex-wrap gap-1">
-                              {preset.sizes.map((size) => (
-                                <Badge key={size} variant="secondary" className="text-xs bg-orange-100 text-orange-700">
-                                  {size}
+                              {preset.sizes.map((size, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                                  {size.w}×{size.h}
                                 </Badge>
                               ))}
                             </div>
@@ -311,24 +550,28 @@ const ImageEditor = () => {
               </Card>
             )}
 
-            {/* File Info */}
-            {selectedFile && (
+            {/* Métadonnées */}
+            {imageMetadata && (
               <Card className="border-2 border-slate-200 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-slate-700">Informations</CardTitle>
+                  <CardTitle className="text-slate-700 text-base">Métadonnées</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Nom:</span>
-                    <span className="font-medium text-slate-800">{selectedFile.name}</span>
+                    <span className="font-medium text-slate-800 truncate ml-2">{imageMetadata.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Dimensions:</span>
+                    <span className="font-medium text-slate-800">{imageMetadata.width} × {imageMetadata.height}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Taille:</span>
-                    <span className="font-medium text-slate-800">{Math.round(selectedFile.size / 1024)} KB</span>
+                    <span className="font-medium text-slate-800">{Math.round(imageMetadata.size / 1024)} KB</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Type:</span>
-                    <span className="font-medium text-slate-800">{selectedFile.type}</span>
+                    <span className="font-medium text-slate-800">{imageMetadata.type}</span>
                   </div>
                 </CardContent>
               </Card>
