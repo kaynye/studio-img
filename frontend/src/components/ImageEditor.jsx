@@ -250,15 +250,21 @@ const ImageEditor = () => {
     const format = formats.find(f => f.id === selectedFormat);
     const filename = selectedFile.name.replace(/\.[^/.]+$/, '');
     
+    // Ajouter info sur les dimensions si modifiées
+    let finalFilename = filename;
+    if (customSize.width && customSize.height) {
+      finalFilename = `${filename}_${customSize.width}x${customSize.height}`;
+    }
+    
     imageProcessor.current.downloadImage(
       processedPreview, 
-      filename, 
+      finalFilename, 
       format?.extension || 'png'
     );
     
     toast({
       title: "Téléchargement démarré",
-      description: `${filename}.${format?.extension || 'png'}`,
+      description: `${finalFilename}.${format?.extension || 'png'}`,
     });
   };
 
