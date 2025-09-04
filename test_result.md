@@ -256,9 +256,8 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Fonctionnalité preset dimensions"
-  stuck_tasks: 
-    - "Fonctionnalité preset dimensions"
+    - "Validation finale complète terminée"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
