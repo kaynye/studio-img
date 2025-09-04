@@ -274,7 +274,12 @@ const ImageEditor = () => {
     // Pour les presets de redimensionnement simple, mettre à jour les dimensions immédiatement
     if (preset.action === 'resize') {
       const targetSize = preset.sizes[0];
-      setCustomSize({ width: targetSize.w.toString(), height: targetSize.h.toString() });
+      console.log('Preset appliqué:', preset.name, 'Size:', targetSize);
+      
+      setCustomSize({ 
+        width: targetSize.w.toString(), 
+        height: targetSize.h.toString() 
+      });
       
       toast({
         title: `Preset ${preset.name} appliqué`,
