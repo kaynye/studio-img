@@ -265,31 +265,109 @@ const ImageEditor = () => {
   const handlePresetSize = async (preset) => {
     if (!selectedFile) return;
     
-    // Pour les favicons, générer toutes les tailles
-    if (preset.id === 'favicon') {
-      try {
+    setProcessing(true);
+    setProcessingProgress(10);
+    
+    try {
+      if (preset.action === 'multi-download') {
+        // Pour les favicons, générer et télécharger toutes les tailles
         const favicons = await imageProcessor.current.generateFavicons(selectedFile);
+        setProcessingProgress(60);
         
-        // Télécharger toutes les tailles
-        Object.entries(favicons).forEach(([size, dataUrl]) => {
-          imageProcessor.current.downloadImage(dataUrl, `favicon-${size}`, 'png');
+        // Appliquer les filtres actuels à chaque taille
+        const processedFavicons = {};
+        for (const [size, dataUrl] of Object.entries(favicons)) {
+          // Convertir en blob pour appliquer les filtres
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          const tempFile = new File([blob], `favicon-${size}.png`, { type: 'image/png' });
+          
+          const processedDataUrl = await imageProcessor.current.applyAdvancedFilters(tempFile, filters);
+          processedFavicons[size] = processedDataUrl;
+        }
+        
+        setProcessingProgress(90);
+        
+        // Télécharger toutes les tailles traitées
+        Object.entries(processedFavicons).forEach(([size, dataUrl]) => {
+          setTimeout(() => {
+            imageProcessor.current.downloadImage(dataUrl, `favicon-${size}`, 'ico');
+          }, 100);
         });
+        
+        setProcessingProgress(100);
         
         toast({
           title: "Favicons générés!",
-          description: "Toutes les tailles ont été téléchargées.",
+          description: `Toutes les tailles téléchargées avec filtres appliqués`,
         });
-      } catch (error) {
+        
+      } else if (preset.action === 'resize') {
+        // Pour les autres presets, redimensionner et appliquer les filtres
+        const targetSize = preset.sizes[0];
+        setProcessingProgress(30);
+        
+        // Redimensionner l'image
+        const resizedDataUrl = await imageProcessor.current.resizeImage(
+          selectedFile, 
+          targetSize.w, 
+          targetSize.h, 
+          false
+        );
+        setProcessingProgress(60);
+        
+        // Convertir en blob pour appliquer les filtres
+        const response = await fetch(resizedDataUrl);
+        const blob = await response.blob();
+        const tempFile = new File([blob], selectedFile.name, { type: selectedFile.type });
+        
+        // Appliquer les filtres
+        const processedDataUrl = await imageProcessor.current.applyAdvancedFilters(tempFile, filters);
+        setProcessingProgress(80);
+        
+        // Convertir au format sélectionné
+        const response2 = await fetch(processedDataUrl);
+        const blob2 = await response2.blob();
+        const tempFile2 = new File([blob2], selectedFile.name, { type: selectedFile.type });
+        
+        const finalDataUrl = await imageProcessor.current.convertToFormat(
+          tempFile2, 
+          selectedFormat, 
+          quality / 100
+        );
+        setProcessingProgress(95);
+        
+        // Mettre à jour le preview et télécharger
+        setProcessedPreview(finalDataUrl);
+        
+        const format = formats.find(f => f.id === selectedFormat);
+        const filename = `${preset.name.toLowerCase().replace(/\s+/g, '-')}-${targetSize.w}x${targetSize.h}`;
+        
+        setTimeout(() => {
+          imageProcessor.current.downloadImage(finalDataUrl, filename, format?.extension || 'png');
+        }, 100);
+        
+        // Mettre à jour aussi les dimensions dans l'interface
+        setCustomSize({ width: targetSize.w.toString(), height: targetSize.h.toString() });
+        
+        setProcessingProgress(100);
+        
         toast({
-          title: "Erreur",
-          description: "Impossible de générer les favicons.",
-          variant: "destructive"
+          title: `${preset.name} généré!`,
+          description: `${targetSize.w}×${targetSize.h} avec filtres appliqués`,
         });
       }
-    } else {
-      // Pour les autres presets, utiliser la première taille
-      const firstSize = preset.sizes[0];
-      setCustomSize({ width: firstSize.w.toString(), height: firstSize.h.toString() });
+      
+    } catch (error) {
+      console.error('Erreur preset:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de traiter le preset.",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessing(false);
+      setTimeout(() => setProcessingProgress(0), 1000);
     }
   };
 
