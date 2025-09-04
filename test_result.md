@@ -249,8 +249,10 @@ metadata:
   test_sequence: 1
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus: 
+    - "Fonctionnalité preset dimensions"
+  stuck_tasks: 
+    - "Fonctionnalité preset dimensions"
   test_all: false
   test_priority: "high_first"
 
