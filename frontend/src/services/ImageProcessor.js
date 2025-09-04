@@ -196,6 +196,12 @@ export class ImageProcessor {
       return this.canvas.toDataURL('image/jpeg', quality);
     }
     
+    // Pour ICO, utiliser PNG mais avec extension ICO
+    if (format === 'ico') {
+      this.ctx.drawImage(img, 0, 0);
+      return this.canvas.toDataURL('image/png');
+    }
+    
     // Pour WebP
     if (format === 'webp') {
       this.ctx.drawImage(img, 0, 0);
