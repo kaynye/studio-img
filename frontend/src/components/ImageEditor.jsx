@@ -624,18 +624,33 @@ const ImageEditor = () => {
                             {preset.action === 'multi-download' && (
                               <div className="flex flex-wrap gap-1 mt-1">
                                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                  16×16
-                                </Badge>
-                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                  32×32
-                                </Badge>
-                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                  48×48
+                                  16×16 • 32×32 • 48×48
                                 </Badge>
                               </div>
                             )}
                           </Card>
                         ))}
+                        
+                        {/* Bouton pour traiter avec les dimensions actuelles */}
+                        {customSize.width && customSize.height && (
+                          <Card className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                            <div className="text-sm font-medium text-blue-800 mb-2">
+                              Traitement avec dimensions: {customSize.width}×{customSize.height}px
+                            </div>
+                            <Button
+                              onClick={() => {
+                                // Utiliser la fonction de traitement existante
+                                handleProcess();
+                              }}
+                              size="sm"
+                              className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
+                              disabled={processing}
+                            >
+                              <Zap className="w-4 h-4 mr-2" />
+                              {processing ? 'Traitement...' : 'Traiter & Télécharger'}
+                            </Button>
+                          </Card>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
