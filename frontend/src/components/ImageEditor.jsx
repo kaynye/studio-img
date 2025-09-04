@@ -271,19 +271,31 @@ const ImageEditor = () => {
   const handlePresetSize = async (preset) => {
     if (!selectedFile) return;
     
-    setProcessing(true);
-    setProcessingProgress(10);
+    // Pour les presets de redimensionnement simple, mettre à jour les dimensions immédiatement
+    if (preset.action === 'resize') {
+      const targetSize = preset.sizes[0];
+      setCustomSize({ width: targetSize.w.toString(), height: targetSize.h.toString() });
+      
+      toast({
+        title: `Preset ${preset.name} appliqué`,
+        description: `Dimensions définies à ${targetSize.w}×${targetSize.h}px`,
+      });
+      return;
+    }
     
-    try {
-      if (preset.action === 'multi-download') {
-        // Pour les favicons, générer et télécharger toutes les tailles
+    // Pour les favicons (multi-download), traitement complet
+    if (preset.action === 'multi-download') {
+      setProcessing(true);
+      setProcessingProgress(10);
+      
+      try {
+        // Générer les favicons
         const favicons = await imageProcessor.current.generateFavicons(selectedFile);
         setProcessingProgress(60);
         
         // Appliquer les filtres actuels à chaque taille
         const processedFavicons = {};
         for (const [size, dataUrl] of Object.entries(favicons)) {
-          // Convertir en blob pour appliquer les filtres
           const response = await fetch(dataUrl);
           const blob = await response.blob();
           const tempFile = new File([blob], `favicon-${size}.png`, { type: 'image/png' });
@@ -295,85 +307,30 @@ const ImageEditor = () => {
         setProcessingProgress(90);
         
         // Télécharger toutes les tailles traitées
-        Object.entries(processedFavicons).forEach(([size, dataUrl]) => {
+        Object.entries(processedFavicons).forEach(([size, dataUrl], index) => {
           setTimeout(() => {
             imageProcessor.current.downloadImage(dataUrl, `favicon-${size}`, 'ico');
-          }, 100);
+          }, index * 200); // Étaler les téléchargements
         });
         
         setProcessingProgress(100);
         
         toast({
-          title: "Favicons générés!",
-          description: `Toutes les tailles téléchargées avec filtres appliqués`,
+          title: "Favicons générés et téléchargés!",
+          description: `3 tailles (16×16, 32×32, 48×48) avec filtres appliqués`,
         });
         
-      } else if (preset.action === 'resize') {
-        // Pour les autres presets, redimensionner et appliquer les filtres
-        const targetSize = preset.sizes[0];
-        setProcessingProgress(30);
-        
-        // Redimensionner l'image
-        const resizedDataUrl = await imageProcessor.current.resizeImage(
-          selectedFile, 
-          targetSize.w, 
-          targetSize.h, 
-          false
-        );
-        setProcessingProgress(60);
-        
-        // Convertir en blob pour appliquer les filtres
-        const response = await fetch(resizedDataUrl);
-        const blob = await response.blob();
-        const tempFile = new File([blob], selectedFile.name, { type: selectedFile.type });
-        
-        // Appliquer les filtres
-        const processedDataUrl = await imageProcessor.current.applyAdvancedFilters(tempFile, filters);
-        setProcessingProgress(80);
-        
-        // Convertir au format sélectionné
-        const response2 = await fetch(processedDataUrl);
-        const blob2 = await response2.blob();
-        const tempFile2 = new File([blob2], selectedFile.name, { type: selectedFile.type });
-        
-        const finalDataUrl = await imageProcessor.current.convertToFormat(
-          tempFile2, 
-          selectedFormat, 
-          quality / 100
-        );
-        setProcessingProgress(95);
-        
-        // Mettre à jour le preview et télécharger
-        setProcessedPreview(finalDataUrl);
-        
-        const format = formats.find(f => f.id === selectedFormat);
-        const filename = `${preset.name.toLowerCase().replace(/\s+/g, '-')}-${targetSize.w}x${targetSize.h}`;
-        
-        setTimeout(() => {
-          imageProcessor.current.downloadImage(finalDataUrl, filename, format?.extension || 'png');
-        }, 100);
-        
-        // Mettre à jour aussi les dimensions dans l'interface
-        setCustomSize({ width: targetSize.w.toString(), height: targetSize.h.toString() });
-        
-        setProcessingProgress(100);
-        
+      } catch (error) {
+        console.error('Erreur favicon:', error);
         toast({
-          title: `${preset.name} généré!`,
-          description: `${targetSize.w}×${targetSize.h} avec filtres appliqués`,
+          title: "Erreur",
+          description: "Impossible de générer les favicons.",
+          variant: "destructive"
         });
+      } finally {
+        setProcessing(false);
+        setTimeout(() => setProcessingProgress(0), 1000);
       }
-      
-    } catch (error) {
-      console.error('Erreur preset:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de traiter le preset.",
-        variant: "destructive"
-      });
-    } finally {
-      setProcessing(false);
-      setTimeout(() => setProcessingProgress(0), 1000);
     }
   };
 
