@@ -1,49 +1,172 @@
-# Getting Started with Create React App
+# 🎨 ImageCrafter Pro
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Application de retouche d'image professionnelle avec traitement 100% côté client.
 
-## Available Scripts
+![ImageCrafter Pro](https://img.shields.io/badge/Version-1.0.0-orange) ![React](https://img.shields.io/badge/React-19.0.0-blue) ![License](https://img.shields.io/badge/License-MIT-green)
 
-In the project directory, you can run:
+## ✨ Fonctionnalités
 
-### `npm start`
+### 🖼️ **Édition d'Images**
+- **Filtres temps réel** : Luminosité, Contraste, Saturation, Flou, Gamma
+- **Comparaison avant/après** : Visualisation instantanée des modifications
+- **Prévisualisation en direct** : Aperçu en temps réel des filtres appliqués
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 📐 **Redimensionnement & Presets**
+- **Presets réseaux sociaux** :
+  - Facebook Cover (820×312)
+  - Instagram Post (1080×1080)
+  - Twitter Header (1500×500)
+- **Presets web** :
+  - Thumbnail Web (300×200)
+  - Banner Web (1200×400)
+- **Génération de favicons** automatique (16×16, 32×32, 48×48)
+- **Dimensions personnalisées** avec maintien du ratio
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 💾 **Formats & Export**
+- **PNG** : Qualité parfaite avec transparence
+- **PNG Transparent** : Suppression automatique du fond
+- **JPEG** : Compression optimisée avec contrôle qualité
+- **WebP** : Format web moderne
+- **ICO** : Icônes Windows/Web
 
-### `npm test`
+### 🔧 **Interface Utilisateur**
+- **Drag & Drop** : Glissez-déposez vos images
+- **Design responsive** : Fonctionne sur mobile et desktop
+- **Interface moderne** : Palette de couleurs professionnelle
+- **Notifications toast** : Feedback utilisateur intuitif
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🚀 **Avantages Techniques**
 
-### `npm run build`
+### 🔒 **Confidentialité Totale**
+- **Traitement 100% local** : Aucune image uploadée sur serveur
+- **Sécurité maximale** : Vos données restent sur votre appareil
+- **Fonctionne hors ligne** : Une fois chargé, pas besoin d'internet
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### ⚡ **Performance Optimale**
+- **Canvas API native** : Utilise les capacités du navigateur
+- **Traitement instantané** : Pas d'attente réseau
+- **Mémoire optimisée** : Gestion intelligente des ressources
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🌐 **Déploiement Simple**
+- **Site statique** : Compatible GitHub Pages, Netlify, Vercel
+- **Coûts zéro** : Pas de serveur backend nécessaire
+- **CDN friendly** : Optimisé pour la distribution mondiale
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🛠️ Installation & Développement
 
-### `npm run eject`
+### Prérequis
+- Node.js 16+
+- Yarn ou npm
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Installation
+```bash
+# Cloner le repository
+git clone [votre-repo]
+cd imagecrafter-pro
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Installer les dépendances
+yarn install
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+# Lancer en développement
+yarn start
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Build de production
+```bash
+# Créer le build optimisé
+yarn build
 
-## Learn More
+# Les fichiers sont dans le dossier `build/`
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 📁 Structure du Projet
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+imagecrafter-pro/
+├── public/              # Fichiers statiques
+├── src/
+│   ├── components/
+│   │   ├── ui/         # Composants UI (Shadcn)
+│   │   └── ImageEditor.jsx  # Composant principal
+│   ├── services/
+│   │   └── ImageProcessor.js  # Logique de traitement
+│   ├── hooks/
+│   │   └── use-toast.js     # Hook pour notifications
+│   ├── App.js          # Composant racine
+│   ├── App.css         # Styles globaux
+│   └── index.js        # Point d'entrée
+├── package.json        # Dépendances
+└── README.md          # Documentation
+```
+
+## 🎯 Technologies Utilisées
+
+- **React 19** : Framework frontend moderne
+- **Tailwind CSS** : Framework CSS utilitaire
+- **Shadcn/ui** : Composants UI accessibles
+- **Lucide React** : Icônes modernes
+- **Canvas API** : Traitement d'image natif
+- **Radix UI** : Primitives UI accessibles
+
+## 🔧 Configuration
+
+### Variables d'environnement
+Aucune variable d'environnement nécessaire - l'application fonctionne entièrement côté client.
+
+### Personnalisation
+Modifiez les presets dans `src/components/ImageEditor.jsx` :
+```javascript
+const presetSizes = [
+  { 
+    id: 'custom-preset', 
+    name: 'Mon Preset', 
+    sizes: [{ w: 800, h: 600 }],
+    action: 'resize'
+  }
+];
+```
+
+## 🚀 Déploiement
+
+### GitHub Pages
+```bash
+yarn build
+# Déployez le contenu du dossier `build/`
+```
+
+### Netlify
+```bash
+# Build command: yarn build
+# Publish directory: build
+```
+
+### Vercel
+```bash
+# Framework preset: Create React App
+# Build command: yarn build
+# Output directory: build
+```
+
+## 📝 Licence
+
+MIT License - Vous êtes libre d'utiliser ce projet à des fins personnelles et commerciales.
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+- Ouvrir des issues pour signaler des bugs
+- Proposer de nouvelles fonctionnalités
+- Soumettre des pull requests
+
+## 📞 Support
+
+Pour toute question ou assistance :
+- Créez une issue sur GitHub
+- Consultez la documentation en ligne
+
+---
+
+**ImageCrafter Pro** - Retouche d'image professionnelle, simple et sécurisée. 🎨✨
 
 ### Code Splitting
 
